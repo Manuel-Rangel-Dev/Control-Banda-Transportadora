@@ -23,7 +23,7 @@ La aplicación se organiza en una sola pantalla sin navegación entre páginas:
 | **03 Diagrama de bloques** | Diagrama visual C(s) → G(s) con retroalimentación unitaria |
 | **04 Respuesta temporal** | Gráfica al escalón escalada en RPM + especificaciones (Mp, tr, tp, ts, ess) |
 | **05 Polos y ceros** | Mapa en el plano complejo con valores numéricos |
-| **06 Diagrama de Bode** | Magnitud y fase del lazo abierto L(s) = C(s)·G(s) + márgenes |
+| **06 Diagrama de Bode** | Magnitud y fase del lazo abierto L(s) = C(s)·G(s)·H(s) + márgenes |
 | **07 Estabilidad** | Diagnóstico por color: estable / crítico / inestable con tabla de polos |
 
 ---
