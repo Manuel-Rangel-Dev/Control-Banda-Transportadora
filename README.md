@@ -32,11 +32,11 @@ La aplicación se organiza en una sola pantalla sin navegación entre páginas:
 
 **Primer orden (modelo aproximado):**
 
-$$G(s) = \frac{17.4}{0.0583s + 1}$$
+$$P(s) = \frac{17.4}{0.0583s + 1}$$
 
 **Segundo orden:**
 
-$$G(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}$$
+$$P(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}$$
 
 ---
 
@@ -72,13 +72,13 @@ $$G(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}$$
 ### Instalar dependencias
 
 ```bash
-pip install streamlit numpy matplotlib control
+pip install -r requirements.txt
 ```
 
 ### Ejecutar la aplicación
 
 ```bash
-streamlit run app.py
+streamlit run GUI.py
 ```
 
 La aplicación se abrirá automáticamente en el navegador en `http://localhost:8501`.
@@ -89,7 +89,7 @@ La aplicación se abrirá automáticamente en el navegador en `http://localhost:
 
 ```
 .
-├── app.py          # Aplicación principal (única entrada)
+├── GUI.py          # Aplicación principal (única entrada)
 └── README.md
 ```
 
@@ -108,8 +108,8 @@ La aplicación se abrirá automáticamente en el navegador en `http://localhost:
 
 ## 📐 Detalles técnicos
 
-- Todo el análisis se realiza sobre el **sistema en lazo cerrado** $T(s) = \frac{C(s)G(s)}{1 + C(s)G(s)}$.
-- El diagrama de Bode se calcula sobre el **lazo abierto** $L(s) = C(s)G(s)$.
+- Todo el análisis se realiza sobre el **sistema en lazo cerrado** $T(s) = \frac{C(s)P(s)H(s)}{1 + C(s)P(s)H(s)}$.
+- El diagrama de Bode se calcula sobre el **lazo abierto** $L(s) = C(s)P(s)H(s)$.
 - Los márgenes de estabilidad se obtienen con `control.margin()`.
 - El eje temporal de la respuesta se ajusta automáticamente estimando $t_s$ con una simulación previa en un rango largo (0–5 s) y añadiendo un 40% de margen visual.
 - Las ganancias del controlador no tienen límite superior fijo; se ingresan como valores numéricos directamente.
@@ -118,7 +118,7 @@ La aplicación se abrirá automáticamente en el navegador en `http://localhost:
 
 ## 🖼 Capturas
 
-> Agrega aquí capturas de pantalla de la interfaz ejecutándose (`screenshot.png`).
+![Parte de la interfaz](Interfaz.png)
 
 ---
 
