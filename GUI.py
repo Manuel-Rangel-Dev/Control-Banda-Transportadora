@@ -283,7 +283,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     # ── Entrada R(s) ────────────────────────────────────────────────────
     label(X_R, Y + 0.5, f"R(s)", color=ACC, fs=8.5)
-    label(X_R, Y,       f"{setpoint} RPM", color=DIM, fs=7)
+    label(X_R, Y,       f"{setpoint} RPM", color=WHITE, fs=7)
     hline(X_L0, X_SUM - 0.32, Y)
     arrow_right(X_SUM - 0.32, Y)
 
@@ -292,7 +292,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     # ── e(t) ─────────────────────────────────────────────────────────────
     hline(X_SUM + 0.32, X_C - 1.05, Y)
-    label((X_SUM + 0.32 + X_C - 1.05) / 2, Y + 0.28, "e(t)", color=DIM, fs=7)
+    label((X_SUM + 0.32 + X_C - 1.05) / 2, Y + 0.28, "e(t)", color=WHITE, fs=7)
     arrow_right(X_C - 1.05, Y)
 
     # ── Bloque C(s) ──────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     # ── u(t) ─────────────────────────────────────────────────────────────
     hline(X_C + 1.0, X_G - 1.15, Y)
-    label((X_C + 1.0 + X_G - 1.15) / 2, Y + 0.28, "u(t)", color=DIM, fs=7)
+    label((X_C + 1.0 + X_G - 1.15) / 2, Y + 0.28, "u(t)", color=WHITE, fs=7)
     arrow_right(X_G - 1.15, Y)
 
     # ── Bloque G(s) ──────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     # ── Y(s) ─────────────────────────────────────────────────────────────
     label(X_Y + 0.3, Y + 0.45, "Y(s)", color=ACC, fs=8.5)
-    label(X_Y + 0.3, Y,        "ω [RPM]", color=DIM, fs=7)
+    label(X_Y + 0.3, Y,        "ω [RPM]", color=WHITE, fs=7)
     # flecha de salida
     hline(X_L3, X_Y + 0.05, Y)
     arrow_right(X_Y + 0.05, Y, color=ACC)
@@ -330,7 +330,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
     arrow_right(X_SUM, Y - 0.32, color=LINE)   # sólo para visibilidad
     # Etiqueta H(s)=1
     label((X_SUM + X_FB) / 2, Yf - 0.28, "H(s) = 1  [retroalimentación unitaria]",
-          color=DIM, fs=7)
+          color=WHITE, fs=7)
 
     plt.tight_layout(pad=0.2)
     return fig
