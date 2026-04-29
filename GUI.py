@@ -248,7 +248,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     def block(cx, cy, w, h, txt, sublabel=None, accent=False):
         """Rectángulo centrado en (cx,cy)."""
-        ec = WHITE if accent else BORDER
+        ec = ACC if accent else BORDER
         rect = plt.Rectangle((cx - w/2, cy - h/2), w, h,
                               linewidth=1.8, edgecolor=ec,
                               facecolor=BG, zorder=3)
@@ -300,6 +300,11 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
           texto_controlador(controlador, Kp, Ki, Kd),
           sublabel="CONTROLADOR C(s)", accent=True)
 
+    ax = plt.gca()
+    for text_obj in ax.texts:
+        if text_obj.get_text() == "CONTROLADOR C(s)":
+            text_obj.set_color("white")
+
     # ── u(t) ─────────────────────────────────────────────────────────────
     hline(X_C + 1.0, X_G - 1.15, Y)
     label((X_C + 1.0 + X_G - 1.15) / 2, Y + 0.28, "u(t)", color=WHITE, fs=7)
@@ -309,6 +314,11 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
     block(X_G, Y, 2.25, 1.05,
           texto_planta(modelo),
           sublabel="PLANTA G(s)", accent=False)
+
+    ax = plt.gca()
+    for text_obj in ax.texts:
+        if text_obj.get_text() == "PLANTA G(s)":
+            text_obj.set_color("white")   
 
     # ── Línea de salida hasta nodo ───────────────────────────────────────
     hline(X_G + 1.125, X_L3, Y)
@@ -468,10 +478,10 @@ with col_step:
         # Señal de respuesta
         ax_step.plot(t_out, y_rpm, color="#00c8ff", lw=2.0, label="y(t)")
 
-        ax_step.set_xlabel("Tiempo [s]", color="#6a8ab8", fontsize=8, fontfamily="monospace")
-        ax_step.set_ylabel("Velocidad [RPM]", color="#6a8ab8", fontsize=8, fontfamily="monospace")
+        ax_step.set_xlabel("Tiempo [s]", color="#B6B6B6", fontsize=8, fontfamily="monospace")
+        ax_step.set_ylabel("Velocidad [RPM]", color="#00c8ff", fontsize=8, fontfamily="monospace")
         ax_step.set_xlim(0, T_end)
-        ax_step.tick_params(colors="#4a6080", labelsize=7)
+        ax_step.tick_params(colors="#B6B6B6", labelsize=7)
         for sp in ax_step.spines.values():
             sp.set_edgecolor("#1e2535")
         ax_step.legend(fontsize=7, facecolor="#12151c", edgecolor="#2a3a5a",
@@ -592,9 +602,9 @@ def plot_poles_zeros(sys_cl):
     ax.legend(handles=legend_elem, fontsize=7,
               facecolor="#12151c", edgecolor="#2a3a5a", labelcolor="#8a9ab8")
 
-    ax.set_xlabel("Re", color="#6a8ab8", fontsize=8, fontfamily="monospace")
-    ax.set_ylabel("Im", color="#6a8ab8", fontsize=8, fontfamily="monospace")
-    ax.tick_params(colors="#4a6080", labelsize=7)
+    ax.set_xlabel("Re", color="#4AA4D9", fontsize=8, fontfamily="monospace")
+    ax.set_ylabel("Im", color="#4AA4D9", fontsize=8, fontfamily="monospace")
+    ax.tick_params(colors="#B6B6B6", labelsize=7)
     for sp in ax.spines.values():
         sp.set_edgecolor("#1e2535")
 
@@ -628,24 +638,24 @@ def plot_bode(L):
     for ax in (ax_mag, ax_ph):
         ax.set_facecolor("#12151c")
         ax.grid(True, which="both", color="#1a2030", lw=0.5, ls="--")
-        ax.tick_params(colors="#4a6080", labelsize=7)
+        ax.tick_params(colors="#B6B6B6", labelsize=7)
         for sp in ax.spines.values():
             sp.set_edgecolor("#1e2535")
 
     # ── Magnitud ──────────────────────────────────────────────────────────
     ax_mag.semilogx(omega_out, mag_db, color="#00c8ff", lw=1.8)
     ax_mag.axhline(0, color="#2a4060", lw=1.0, ls="--")
-    ax_mag.set_ylabel("Magnitud [dB]", color="#6a8ab8", fontsize=8,
+    ax_mag.set_ylabel("Magnitud [dB]", color="#00c8ff", fontsize=8,
                       fontfamily="monospace")
-    ax_mag.set_title("Bode — L(s) = C(s)·G(s)", color="#8a9ab8",
+    ax_mag.set_title("Bode — L(s) = C(s)·G(s)", color="#00A4D1",
                      fontsize=8, fontfamily="monospace", pad=6)
 
     # ── Fase ─────────────────────────────────────────────────────────────
     ax_ph.semilogx(omega_out, phase_deg, color="#ffa040", lw=1.8)
     ax_ph.axhline(-180, color="#2a4060", lw=1.0, ls="--")
-    ax_ph.set_ylabel("Fase [°]", color="#6a8ab8", fontsize=8,
+    ax_ph.set_ylabel("Fase [°]", color="#ffa040", fontsize=8,
                      fontfamily="monospace")
-    ax_ph.set_xlabel("Frecuencia [rad/s]", color="#6a8ab8", fontsize=8,
+    ax_ph.set_xlabel("Frecuencia [rad/s]", color="#B6B6B6", fontsize=8,
                      fontfamily="monospace")
 
     fig.tight_layout(pad=0.6)
