@@ -248,7 +248,7 @@ def draw_block_diagram(modelo, controlador, Kp, Ki, Kd):
 
     def block(cx, cy, w, h, txt, sublabel=None, accent=False):
         """Rectángulo centrado en (cx,cy)."""
-        ec = ACC if accent else BORDER
+        ec = WHITE if accent else BORDER
         rect = plt.Rectangle((cx - w/2, cy - h/2), w, h,
                               linewidth=1.8, edgecolor=ec,
                               facecolor=BG, zorder=3)
