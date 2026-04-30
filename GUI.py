@@ -409,8 +409,9 @@ def calc_step_specs(t, y, setpoint):
 
     # Error en estado estacionario (referencia = setpoint)
     ess = abs(setpoint - yss)
+    ess_pct = (ess / setpoint * 100) if setpoint != 0 else 0.0
 
-    return Mp, tp, tr, ts, ess
+    return Mp, tp, tr, ts, ess, ess_pct, yss
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -423,28 +424,59 @@ CL, L_open = build_closed_loop(modelo, controlador, Kp, Ki, Kd)
 
 # ── Calcular tiempo de simulación adaptativo ─────────────────────────────────
 def calc_T_end(sys_cl, fallback=0.2):
-    """
-    Estima el tiempo necesario para ver el transitorio completo.
-    Estrategia: simula con T largo, detecta ts(2%), y añade margen visual.
-    """
     try:
+        # Estimación inicial con simulación larga
         t_long = np.linspace(0, 5.0, 10000)
         t_tmp, y_tmp = control.step_response(sys_cl, T=t_long)
         yss = y_tmp[-1]
         if yss == 0:
             return fallback
-        banda = 0.02 * abs(yss)
-        ts_idx = 0
-        for i in range(len(y_tmp) - 1, -1, -1):
-            if abs(y_tmp[i] - yss) > banda:
-                ts_idx = i
-                break
-        ts_est = t_tmp[ts_idx]
-        # Añadir 40% de margen visual, mínimo 2×tp
-        tp_idx = np.argmax(y_tmp)
+
+        # Tiempo pico
+        tp_idx = np.argmax(np.abs(y_tmp - yss))  # pico relativo al valor final
         tp_est = t_tmp[tp_idx]
-        T_visual = max(ts_est * 1.4, tp_est * 2.5, 1e-4)
-        # Acotar entre 1 ms y 2 s para que la gráfica sea útil
+        ymax   = y_tmp[tp_idx]
+
+        # Tiempo en que la señal supera el 10% del valor final (inicio real)
+        try:
+            t10_idx = np.where(y_tmp >= 0.1 * yss)[0][0]
+            t10 = t_tmp[t10_idx]
+        except IndexError:
+            t10 = 0.0
+
+        # Tiempo en que la señal supera el 90% del valor final
+        try:
+            t90_idx = np.where(y_tmp >= 0.9 * yss)[0][0]
+            t90 = t_tmp[t90_idx]
+        except IndexError:
+            t90 = tp_est
+
+        # Constante de tiempo aparente del transitorio visible
+        tau_visible = t90 - t10 if t90 > t10 else tp_est
+
+        # Si el transitorio es ultrarápido (tau < 1ms) y el sistema
+        # luego converge lentamente, mostrar desde el inicio hasta
+        # ~5 × tau_lenta (estimada desde t90 hasta que entra en ±5%)
+        if tau_visible < 1e-3:
+            banda5 = 0.05 * abs(yss)
+            ts5_idx = 0
+            for i in range(len(y_tmp) - 1, -1, -1):
+                if abs(y_tmp[i] - yss) > banda5:
+                    ts5_idx = i
+                    break
+            tau_lenta = t_tmp[ts5_idx] - t90 if ts5_idx > t90_idx else t90
+            T_visual = max(t90 * 10, tau_lenta * 2.0, 0.01)
+        else:
+            # Caso normal: mostrar hasta después del establecimiento
+            banda = 0.02 * abs(yss)
+            ts_idx = 0
+            for i in range(len(y_tmp) - 1, -1, -1):
+                if abs(y_tmp[i] - yss) > banda:
+                    ts_idx = i
+                    break
+            ts_est = t_tmp[ts_idx]
+            T_visual = max(ts_est * 1.4, tp_est * 2.5, 1e-4)
+
         return float(np.clip(T_visual, 1e-3, 2.0))
     except Exception:
         return fallback
@@ -477,6 +509,12 @@ with col_step:
 
         # Señal de respuesta
         ax_step.plot(t_out, y_rpm, color="#00c8ff", lw=2.0, label="y(t)")
+        _yss   = y_rpm[-1]
+        _ylo   = min(np.min(y_rpm), _yss - 0.15 * setpoint)
+        _yhi   = max(np.max(y_rpm), _yss + 0.15 * setpoint)
+        if np.min(y_rpm) < 0.1 * setpoint:   # señal arranca desde ~0
+            _ylo = min(_ylo, -0.05 * setpoint)
+        ax_step.set_ylim(_ylo, _yhi)
 
         ax_step.set_xlabel("Tiempo [s]", color="#B6B6B6", fontsize=8, fontfamily="monospace")
         ax_step.set_ylabel("Velocidad [RPM]", color="#00c8ff", fontsize=8, fontfamily="monospace")
@@ -486,7 +524,7 @@ with col_step:
             sp.set_edgecolor("#1e2535")
         ax_step.legend(fontsize=7, facecolor="#12151c", edgecolor="#2a3a5a",
                        labelcolor="#8a9ab8")
-        ax_step.grid(True, color="#1a2030", lw=0.6)
+        ax_step.grid(True, color="#2d3549", lw=0.6)
         fig_step.tight_layout(pad=0.6)
         st.pyplot(fig_step, use_container_width=True)
         plt.close(fig_step)
@@ -496,7 +534,7 @@ with col_step:
 # ── Especificaciones temporales ──────────────────────────────────────────────
 with col_specs:
     if sim_ok:
-        Mp, tp, tr, ts, ess = calc_step_specs(t_out, y_rpm, setpoint)
+        Mp, tp, tr, ts, ess, ess_pct, yss_rpm = calc_step_specs(t_out, y_rpm, setpoint)
 
         def fmt(val, unit="s", decimals=4):
             if np.isnan(val):
@@ -537,11 +575,17 @@ with col_specs:
             <span style="color:#e0ecff; font-size:0.85rem; font-weight:700;">
               {fmt(ts)}</span>
           </div>
+          <div style="display:flex; justify-content:space-between;
+                      border-bottom:1px solid #1a2030; padding:7px 0;">
+            <span style="color:#6a8ab8; font-size:0.75rem;">Valor final   y∞</span>
+            <span style="color:#e0ecff; font-size:0.85rem; font-weight:700;">
+              {yss_rpm:.3f} RPM</span>
+          </div>
           <div style="display:flex; justify-content:space-between; padding:7px 0;">
             <span style="color:#6a8ab8; font-size:0.75rem;">Error est.    ess</span>
-            <span style="color:{'#ff6b6b' if ess > 1 else '#00e676'};
+            <span style="color:{'#ff6b6b' if ess_pct > 2 else '#00e676'};
                          font-size:0.85rem; font-weight:700;">
-              {ess:.3f} RPM</span>
+              {ess:.3f} RPM &nbsp;|&nbsp; {ess_pct:.2f} %</span>
           </div>
         </div>
         """
@@ -567,7 +611,7 @@ def plot_poles_zeros(sys_cl):
     # Ejes cartesianos
     ax.axhline(0, color="#2a3a5a", lw=1.0)
     ax.axvline(0, color="#2a3a5a", lw=1.0)
-    ax.grid(True, color="#1a2030", lw=0.5, ls="--")
+    ax.grid(True, color="#2d3549", lw=0.5, ls="--")
 
     # Polos (×)
     for p in poles:
@@ -637,7 +681,7 @@ def plot_bode(L):
 
     for ax in (ax_mag, ax_ph):
         ax.set_facecolor("#12151c")
-        ax.grid(True, which="both", color="#1a2030", lw=0.5, ls="--")
+        ax.grid(True, which="both", color="#2d3549", lw=0.5, ls="--")
         ax.tick_params(colors="#B6B6B6", labelsize=7)
         for sp in ax.spines.values():
             sp.set_edgecolor("#1e2535")
