@@ -1,15 +1,15 @@
 # Control de Velocidad - Motor DC + Banda Transportadora
 
-Proyecto integrador para analizar, simular y controlar la velocidad de una banda transportadora accionada por un motor DC con encoder Hall. El sistema combina una interfaz grafica en Streamlit, un firmware para Arduino desarrollado con PlatformIO y herramientas de adquisicion de datos en tiempo real.
+Proyecto integrador para analizar, simular y controlar la velocidad de una banda transportadora accionada por un motor DC con encoder Hall. El sistema combina una interfaz gráfica en Streamlit, un firmware para Arduino desarrollado con PlatformIO y herramientas de adquisición de datos en tiempo real.
 
-## Descripcion
+## Descripción
 
-La aplicacion permite trabajar en dos niveles:
+La aplicación permite trabajar en dos niveles:
 
-- **Modelado matematico:** analisis del sistema en lazo cerrado, seleccion de planta, controladores P/PI/PD/PID, respuesta temporal, lugar de raices, polos y ceros, diagramas de Bode y diagnostico de estabilidad.
-- **Conexion Arduino:** comunicacion serial con la placa, visualizacion de la velocidad real en RPM, comparacion contra el modelo matematico, grafica del error, cambio de setpoint y ajuste de controlador/ganancias sin detener el programa.
+- **Modelado matemático:** Análisis del sistema en lazo cerrado, selección de planta, controladores P/PI/PD/PID, respuesta temporal, lugar de raíces, polos y ceros, diagramas de Bode y diagnóstico de estabilidad.
+- **Conexión Arduino:** Comunicación serial con la placa, visualización de la velocidad real en RPM, comparación contra el modelo matemático, gráfica del error, cambio de setpoint y ajuste de controlador/ganancias sin detener el programa.
 
-La variable controlada es la velocidad de la banda en **RPM**, medida mediante encoder Hall. El actuador se controla con PWM a traves de un puente H L298N.
+La variable controlada es la velocidad de la banda en **RPM**, medida mediante encoder Hall. El actuador se controla con PWM a través de un puente H L298N.
 
 ## Estructura Del Proyecto
 
@@ -20,51 +20,50 @@ Proyecto_Integrador/
 |   +-- src/
 |       +-- main.cpp              # Firmware Arduino/PlatformIO
 +-- GUI/
-|   +-- GUI.py                    # Aplicacion principal Streamlit
-|   +-- hardware_tab.py           # Pestana de conexion Arduino
-|   +-- serial_banda.py           # Comunicacion serial y registro CSV
-|   +-- control_math.py           # Modelo matematico usado por la pestana hardware
+|   +-- GUI.py                    # Aplicación principal Streamlit
+|   +-- hardware_tab.py           # Pestaña de conexión Arduino
+|   +-- serial_banda.py           # Comunicación serial y registro CSV
+|   +-- control_math.py           # Modelo matemático usado por la pestaña hardware
 |   +-- requirements.txt
 +-- Docs/
 +-- LICENSE
 +-- README.md
-```
 
-## Interfaz Grafica
+## Interfaz Gráfica
 
-La interfaz se ejecuta con Streamlit y esta organizada en dos pestanas.
+La interfaz se ejecuta con Streamlit y está organizada en dos pestañas.
 
-### Modelado Matematico
+### Modelado Matemático
 
 Incluye:
 
 - Setpoint de referencia en RPM.
-- Seleccion de modelo de planta: primer orden o segundo orden.
+- Selección de modelo de planta: primer orden o segundo orden.
 - Controladores P, PI, PD y PID con ganancias configurables.
-- Diagrama de bloques con retroalimentacion unitaria.
+- Diagrama de bloques con retroalimentación unitaria.
 - Respuesta temporal en lazo cerrado escalada a RPM.
 - Especificaciones temporales: sobreimpulso, tiempo pico, tiempo de subida, tiempo de establecimiento y error estacionario.
-- Lugar de raices y regiones de estabilidad.
+- Lugar de raíces y regiones de estabilidad.
 - Mapa de polos y ceros.
 - Diagramas de Bode y margenes de estabilidad.
-- Diagnostico de estabilidad segun la ubicacion de los polos.
+- Diagnóstico de estabilidad segun la ubicacion de los polos.
 
-### Conexion Arduino
+### Conexión Arduino
 
 Incluye:
 
-- Deteccion y seleccion del puerto serial.
+- Detección y selección del puerto serial.
 - Botones para conectar, desconectar, iniciar, detener, limpiar datos y guardar CSV.
 - Setpoint en RPM configurable en tiempo real.
-- Seleccion de controlador P, PI, PD o PID.
+- Selección de controlador P, PI, PD o PID.
 - Ajuste de ganancias `Kp`, `Ki` y `Kd` sin recompilar el firmware.
-- Grafica superior con:
+- Gráfica superior con:
   - velocidad real medida,
   - setpoint,
-  - respuesta del modelo matematico.
-- Grafica inferior del error:
+  - respuesta del modelo matemático.
+- Gráfica inferior del error:
   - `error = setpoint - RPM medida`.
-- Indicadores instantaneos de RPM real, setpoint, error y PWM aplicado.
+- Indicadores instantáneos de RPM real, setpoint, error y PWM aplicado.
 
 ## Firmware PlatformIO
 
@@ -95,18 +94,18 @@ upload_speed = 115200
 | L298N IN2 | 9 |
 | L298N ENA/PWM | 10 |
 
-### Parametros Del Encoder
+### Parámetros Del Encoder
 
 ```cpp
 PPR motor = 34.02
-Relacion de reduccion = 12.0
-CPR = PPR motor * relacion de reduccion
+Relación de reducción = 12.0
+CPR = PPR motor * relación de reducción
 Periodo de muestreo = 50 ms
 ```
 
 ## Protocolo Serial
 
-La GUI envia comandos de texto terminados en salto de linea.
+La GUI envia comandos de texto terminados en salto de línea.
 
 | Comando | Funcion |
 |---|---|
@@ -132,9 +131,9 @@ Ejemplo:
 1.250,86.42,90.00,3.58,218,PID
 ```
 
-## Conversion Provisional RPM A PWM
+## Conversión Provisional RPM A PWM
 
-El setpoint de usuario siempre se trabaja en **RPM**. Para obtener un PWM base aproximado, el firmware usa por ahora la relacion experimental:
+El setpoint de usuario siempre se trabaja en **RPM**. Para obtener un PWM base aproximado, el firmware usa por ahora la relación experimental:
 
 ```text
 RPM = 0.3997 * PWM + 3.004
@@ -146,9 +145,7 @@ Despejando:
 PWM = (RPM - 3.004) / 0.3997
 ```
 
-Ese PWM base se usa como accion inicial o feed-forward. Luego el controlador P/PI/PD/PID suma una correccion segun el error medido por el encoder.
-
-Esta ecuacion es provisional porque corresponde a un motor anterior. Debe actualizarse cuando se hagan las pruebas de identificacion del motor actual.
+Ese PWM base se usa como acción inicial o feed-forward. Luego el controlador P/PI/PD/PID suma una corrección según el error medido por el encoder.
 
 ## Modelos De Planta
 
@@ -166,20 +163,20 @@ P(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}
 
 ## Controladores
 
-| Controlador | Funcion de transferencia | Parametros |
+| Controlador | Función de transferencia | Parámetros |
 |---|---|---|
 | P | `C(s) = Kp` | `Kp` |
 | PI | `C(s) = Kp + Ki/s` | `Kp`, `Ki` |
 | PD | `C(s) = Kp + Kd*s` | `Kp`, `Kd` |
 | PID | `C(s) = Kp + Ki/s + Kd*s` | `Kp`, `Ki`, `Kd` |
 
-## Instalacion
+## Instalación
 
 ### Requisitos
 
 - Python 3.9 o superior.
 - VSCode.
-- Extension PlatformIO.
+- Extensión PlatformIO.
 - Arduino Uno o placa compatible.
 - Driver serial correspondiente a la placa, si aplica.
 
@@ -197,12 +194,12 @@ Dependencias principales:
 | Libreria | Uso |
 |---|---|
 | `streamlit` | Interfaz web |
-| `numpy` | Calculo numerico |
-| `matplotlib` | Graficas |
-| `control` | Funciones de transferencia y analisis de control |
-| `pyserial` | Comunicacion con Arduino |
+| `numpy` | Cálculo numerico |
+| `matplotlib` | Gráficas |
+| `control` | Funciones de transferencia y análisis de control |
+| `pyserial` | Comunicación con Arduino |
 
-## Ejecucion
+## Ejecución
 
 ### Ejecutar La GUI
 
@@ -234,7 +231,7 @@ Con la placa conectada por USB:
 pio run -t upload
 ```
 
-Tambien se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
+También se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
 
 ## Flujo De Uso Recomendado
 
@@ -251,24 +248,24 @@ Tambien se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
 
 ## Datos Guardados
 
-La pestaña de conexion puede guardar los ensayos en CSV con columnas:
+La pestaña de conexión puede guardar los ensayos en CSV con columnas:
 
 ```text
 tiempo_s,rpm_medida,setpoint_rpm,error_rpm,pwm,controlador
 ```
 
-Los archivos se guardan en:
+Los archivos se guardan en la carpeta que se seleccione, reemplazando en:
 
-```text
-Proyecto_Integrador/datos/
+```python
+DATA_DIR = r"C:\Users\Manuel\Desktop\Universidad\Control Automático\VScode\Proyecto_Integrador\datos"
 ```
+
+Que se encuentra en el archivo `serial_banda.py`.
 
 ## Pendientes Y Mejoras Futuras
 
-- Identificar experimentalmente el motor actual.
-- Reemplazar la conversion provisional RPM/PWM con la nueva curva real.
 - Ajustar ganancias iniciales recomendadas para cada controlador.
-- Agregar limites de seguridad de RPM/PWM segun el comportamiento de la banda.
+- Agregar límites de seguridad de RPM/PWM según el comportamiento de la banda.
 - Documentar capturas finales de la interfaz.
 - Agregar ejemplos de ensayos CSV.
 
