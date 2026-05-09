@@ -28,6 +28,7 @@ Proyecto_Integrador/
 +-- Docs/
 +-- LICENSE
 +-- README.md
+```
 
 ## Interfaz Gráfica
 
