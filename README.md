@@ -1,131 +1,277 @@
-# ⚙ Control de Velocidad — Motor DC + Banda Transportadora
+# Control de Velocidad - Motor DC + Banda Transportadora
 
-Dashboard interactivo para el análisis y diseño de controladores de velocidad de un motor DC acoplado a una banda transportadora, construido con **Streamlit** y la librería **python-control**.
+Proyecto integrador para analizar, simular y controlar la velocidad de una banda transportadora accionada por un motor DC con encoder Hall. El sistema combina una interfaz grafica en Streamlit, un firmware para Arduino desarrollado con PlatformIO y herramientas de adquisicion de datos en tiempo real.
 
----
+## Descripcion
 
-## 📋 Descripción
+La aplicacion permite trabajar en dos niveles:
 
-Este proyecto implementa una interfaz gráfica profesional tipo dashboard de ingeniería para analizar el comportamiento de un sistema de control de velocidad en lazo cerrado. La variable controlada es la velocidad en RPM, medida mediante encoder Hall con retroalimentación unitaria.
+- **Modelado matematico:** analisis del sistema en lazo cerrado, seleccion de planta, controladores P/PI/PD/PID, respuesta temporal, lugar de raices, polos y ceros, diagramas de Bode y diagnostico de estabilidad.
+- **Conexion Arduino:** comunicacion serial con la placa, visualizacion de la velocidad real en RPM, comparacion contra el modelo matematico, grafica del error, cambio de setpoint y ajuste de controlador/ganancias sin detener el programa.
 
-El usuario puede seleccionar el modelo de la planta, el tipo de controlador y sus ganancias, y observar en tiempo real cómo cambian la respuesta temporal, las regiones de estabilidad por ganancias, los polos y ceros, el diagrama de Bode y el diagnóstico de estabilidad del sistema.
+La variable controlada es la velocidad de la banda en **RPM**, medida mediante encoder Hall. El actuador se controla con PWM a traves de un puente H L298N.
 
----
+## Estructura Del Proyecto
 
-## 🖥 Interfaz
+```text
+Proyecto_Integrador/
++-- Banda_GUI/
+|   +-- platformio.ini
+|   +-- src/
+|       +-- main.cpp              # Firmware Arduino/PlatformIO
++-- GUI/
+|   +-- GUI.py                    # Aplicacion principal Streamlit
+|   +-- hardware_tab.py           # Pestana de conexion Arduino
+|   +-- serial_banda.py           # Comunicacion serial y registro CSV
+|   +-- control_math.py           # Modelo matematico usado por la pestana hardware
+|   +-- requirements.txt
++-- Docs/
++-- LICENSE
++-- README.md
+```
 
-La aplicación se organiza en una sola pantalla sin navegación entre páginas:
+## Interfaz Grafica
 
-| Bloque | Contenido |
-|--------|-----------|
-| **01 Setpoint** | Slider de referencia de velocidad (60–120 RPM) |
-| **02 Configuración** | Selección de modelo de planta y tipo de controlador con campos de ganancia |
-| **03 Diagrama de bloques** | Diagrama visual C(s) → G(s) con retroalimentación unitaria |
-| **04 Respuesta temporal** | Gráfica al escalón escalada en RPM + especificaciones (Mp, tr, tp, ts, ess) |
-| **05 Lugar de las raíces y regiones de estabilidad** | Lugar de raíces para P, planos de estabilidad para PI/PD y vista PID 3D o por plano con una ganancia fija |
-| **06 Polos y ceros** | Mapa en el plano complejo con valores numéricos |
-| **07 Diagrama de Bode** | Magnitud y fase del lazo abierto L(s) = C(s)·G(s)·H(s) + márgenes |
-| **08 Estabilidad** | Diagnóstico por color: estable / crítico / inestable con tabla de polos |
+La interfaz se ejecuta con Streamlit y esta organizada en dos pestanas.
 
----
+### Modelado Matematico
 
-## 🔧 Modelos de planta disponibles
+Incluye:
 
-**Primer orden (modelo aproximado):**
+- Setpoint de referencia en RPM.
+- Seleccion de modelo de planta: primer orden o segundo orden.
+- Controladores P, PI, PD y PID con ganancias configurables.
+- Diagrama de bloques con retroalimentacion unitaria.
+- Respuesta temporal en lazo cerrado escalada a RPM.
+- Especificaciones temporales: sobreimpulso, tiempo pico, tiempo de subida, tiempo de establecimiento y error estacionario.
+- Lugar de raices y regiones de estabilidad.
+- Mapa de polos y ceros.
+- Diagramas de Bode y margenes de estabilidad.
+- Diagnostico de estabilidad segun la ubicacion de los polos.
 
-$$P(s) = \frac{17.4}{0.0583s + 1}$$
+### Conexion Arduino
 
-**Segundo orden:**
+Incluye:
 
-$$P(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}$$
+- Deteccion y seleccion del puerto serial.
+- Botones para conectar, desconectar, iniciar, detener, limpiar datos y guardar CSV.
+- Setpoint en RPM configurable en tiempo real.
+- Seleccion de controlador P, PI, PD o PID.
+- Ajuste de ganancias `Kp`, `Ki` y `Kd` sin recompilar el firmware.
+- Grafica superior con:
+  - velocidad real medida,
+  - setpoint,
+  - respuesta del modelo matematico.
+- Grafica inferior del error:
+  - `error = setpoint - RPM medida`.
+- Indicadores instantaneos de RPM real, setpoint, error y PWM aplicado.
 
----
+## Firmware PlatformIO
 
-## 🎛 Controladores disponibles
+El firmware se encuentra en:
 
-| Controlador | Función de transferencia | Parámetros |
-|-------------|--------------------------|------------|
-| **P** | $C(s) = K_p$ | Kp |
-| **PI** | $C(s) = K_p + \frac{K_i}{s}$ | Kp, Ki |
-| **PD** | $C(s) = K_p + K_d s$ | Kp, Kd |
-| **PID** | $C(s) = K_p + \frac{K_i}{s} + K_d s$ | Kp, Ki, Kd |
+```text
+Banda_GUI/src/main.cpp
+```
 
----
+La placa configurada actualmente es Arduino Uno:
 
-## 📊 Análisis incluidos
+```ini
+[env:uno]
+platform = atmelavr
+board = uno
+framework = arduino
+monitor_speed = 115200
+upload_speed = 115200
+```
 
-- **Respuesta al escalón** en lazo cerrado escalada al setpoint en RPM, con eje temporal adaptativo que ajusta automáticamente el rango para mostrar el transitorio con claridad.
-- **Especificaciones temporales:** sobreimpulso Mp (%), tiempo pico tp, tiempo de subida tr, tiempo de establecimiento al 2% ts, y error en estado estacionario ess.
-- **Lugar de las raíces y regiones de estabilidad:** barrido de $K_p$ para P, mapas 2D $K_p$-$K_i$ y $K_p$-$K_d$ para PI/PD, y visualización PID en 3D o como plano 2D fijando una de sus ganancias.
-- **Mapa de polos y ceros** del sistema en lazo cerrado con valores complejos.
-- **Diagrama de Bode** del lazo abierto con margen de fase (PM) y margen de ganancia (GM).
-- **Diagnóstico de estabilidad** basado en la parte real de los polos:
-  - 🟢 **Estable** — todos los polos con Re < 0
-  - 🟡 **Estabilidad crítica** — algún polo con Re ≈ 0
-  - 🔴 **Inestable** — algún polo con Re > 0
+### Pines
 
----
+| Elemento | Pin |
+|---|---:|
+| Encoder A | 2 |
+| Encoder B | 3 |
+| L298N IN1 | 8 |
+| L298N IN2 | 9 |
+| L298N ENA/PWM | 10 |
 
-## 🚀 Instalación y ejecución
+### Parametros Del Encoder
+
+```cpp
+PPR motor = 34.02
+Relacion de reduccion = 12.0
+CPR = PPR motor * relacion de reduccion
+Periodo de muestreo = 50 ms
+```
+
+## Protocolo Serial
+
+La GUI envia comandos de texto terminados en salto de linea.
+
+| Comando | Funcion |
+|---|---|
+| `START` | Inicia el control y la transmision de datos |
+| `STOP` | Detiene el motor |
+| `RESET` | Reinicia conteos e integrador |
+| `SETPOINT:<rpm>` | Cambia el setpoint en RPM |
+| `CTRL:P` | Selecciona controlador proporcional |
+| `CTRL:PI` | Selecciona controlador proporcional-integral |
+| `CTRL:PD` | Selecciona controlador proporcional-derivativo |
+| `CTRL:PID` | Selecciona controlador PID |
+| `GAINS:<kp>,<ki>,<kd>` | Actualiza las ganancias del controlador |
+
+El firmware responde con datos CSV:
+
+```text
+tiempo_s,rpm_medida,setpoint_rpm,error_rpm,pwm,controlador
+```
+
+Ejemplo:
+
+```text
+1.250,86.42,90.00,3.58,218,PID
+```
+
+## Conversion Provisional RPM A PWM
+
+El setpoint de usuario siempre se trabaja en **RPM**. Para obtener un PWM base aproximado, el firmware usa por ahora la relacion experimental:
+
+```text
+RPM = 0.3997 * PWM + 3.004
+```
+
+Despejando:
+
+```text
+PWM = (RPM - 3.004) / 0.3997
+```
+
+Ese PWM base se usa como accion inicial o feed-forward. Luego el controlador P/PI/PD/PID suma una correccion segun el error medido por el encoder.
+
+Esta ecuacion es provisional porque corresponde a un motor anterior. Debe actualizarse cuando se hagan las pruebas de identificacion del motor actual.
+
+## Modelos De Planta
+
+### Primer Orden
+
+```math
+P(s) = \frac{17.4}{0.0583s + 1}
+```
+
+### Segundo Orden
+
+```math
+P(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}
+```
+
+## Controladores
+
+| Controlador | Funcion de transferencia | Parametros |
+|---|---|---|
+| P | `C(s) = Kp` | `Kp` |
+| PI | `C(s) = Kp + Ki/s` | `Kp`, `Ki` |
+| PD | `C(s) = Kp + Kd*s` | `Kp`, `Kd` |
+| PID | `C(s) = Kp + Ki/s + Kd*s` | `Kp`, `Ki`, `Kd` |
+
+## Instalacion
 
 ### Requisitos
 
-- Python 3.9 o superior
+- Python 3.9 o superior.
+- VSCode.
+- Extension PlatformIO.
+- Arduino Uno o placa compatible.
+- Driver serial correspondiente a la placa, si aplica.
 
-### Instalar dependencias
+### Dependencias Python
 
-```bash
+Desde la carpeta `GUI`:
+
+```powershell
+cd "C:\Users\Manuel\Desktop\Universidad\Control Automático\VScode\Proyecto_Integrador\GUI"
 pip install -r requirements.txt
 ```
 
-### Ejecutar la aplicación
+Dependencias principales:
 
-```bash
+| Libreria | Uso |
+|---|---|
+| `streamlit` | Interfaz web |
+| `numpy` | Calculo numerico |
+| `matplotlib` | Graficas |
+| `control` | Funciones de transferencia y analisis de control |
+| `pyserial` | Comunicacion con Arduino |
+
+## Ejecucion
+
+### Ejecutar La GUI
+
+Desde la carpeta `GUI`:
+
+```powershell
 streamlit run GUI.py
 ```
 
-La aplicación se abrirá automáticamente en el navegador en `http://localhost:8501`.
+La aplicacion se abrira en:
 
----
-
-## 📁 Estructura del proyecto
-
-```
-.
-├── GUI.py          # Aplicación principal (única entrada)
-└── README.md
+```text
+http://localhost:8501
 ```
 
----
+### Compilar El Firmware
 
-## 📦 Dependencias
+Desde la carpeta `Banda_GUI`:
 
-| Librería | Uso |
-|----------|-----|
-| `streamlit` | Interfaz web interactiva |
-| `numpy` | Cálculo numérico y vectores de tiempo |
-| `matplotlib` | Gráficas embebidas (Bode, escalón, polos/ceros, lugar de raíces, regiones de estabilidad, diagrama de bloques) |
-| `control` | Funciones de transferencia, lazo cerrado, respuesta al escalón, márgenes |
+```powershell
+pio run
+```
 
----
+### Cargar El Firmware Al Arduino
 
-## 📐 Detalles técnicos
+Con la placa conectada por USB:
 
-- Todo el análisis se realiza sobre el **sistema en lazo cerrado** $T(s) = \frac{C(s)P(s)H(s)}{1 + C(s)P(s)H(s)}$.
-- El diagrama de Bode se calcula sobre el **lazo abierto** $L(s) = C(s)P(s)H(s)$.
-- Los márgenes de estabilidad se obtienen con `control.margin()`.
-- El eje temporal de la respuesta se ajusta automáticamente estimando $t_s$ con una simulación previa en un rango largo (0–5 s) y añadiendo un 40% de margen visual.
-- Las regiones de estabilidad se calculan evaluando los polos del sistema en lazo cerrado para una malla de combinaciones de ganancias; una combinación se marca como estable cuando todos los polos tienen parte real negativa.
-- Las ganancias del controlador no tienen límite superior fijo; se ingresan como valores numéricos directamente.
+```powershell
+pio run -t upload
+```
 
----
+Tambien se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
 
-## 🖼 Capturas
+## Flujo De Uso Recomendado
 
-![Parte de la interfaz](Interfaz.png)
+1. Conectar el Arduino por USB.
+2. Cargar el firmware desde PlatformIO.
+3. Ejecutar la GUI con Streamlit.
+4. Abrir la pestaña **Conexion Arduino**.
+5. Seleccionar el puerto serial y presionar **Conectar**.
+6. Elegir setpoint, controlador y ganancias.
+7. Presionar **START**.
+8. Observar la velocidad real, la respuesta del modelo y el error.
+9. Ajustar setpoint o ganancias en tiempo real.
+10. Presionar **STOP** antes de desconectar.
 
----
+## Datos Guardados
 
-## 📄 Licencia
+La pestaña de conexion puede guardar los ensayos en CSV con columnas:
 
-Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+```text
+tiempo_s,rpm_medida,setpoint_rpm,error_rpm,pwm,controlador
+```
+
+Los archivos se guardan en:
+
+```text
+Proyecto_Integrador/datos/
+```
+
+## Pendientes Y Mejoras Futuras
+
+- Identificar experimentalmente el motor actual.
+- Reemplazar la conversion provisional RPM/PWM con la nueva curva real.
+- Ajustar ganancias iniciales recomendadas para cada controlador.
+- Agregar limites de seguridad de RPM/PWM segun el comportamiento de la banda.
+- Documentar capturas finales de la interfaz.
+- Agregar ejemplos de ensayos CSV.
+
+## Licencia
+
+Este proyecto se distribuye bajo licencia MIT. Consulta el archivo `LICENSE` para mas detalles.
