@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import os
 import threading
 import time
@@ -126,7 +126,7 @@ class BandaSerial:
 
             parts = line.split(",")
             if len(parts) != 6:
-                self.messages.append(f"Línea ignorada: {line}")
+                self.messages.append(f"LÃ­nea ignorada: {line}")
                 continue
 
             try:
@@ -139,9 +139,10 @@ class BandaSerial:
                     "controlador": parts[5],
                 }
             except ValueError:
-                self.messages.append(f"Línea inválida: {line}")
+                self.messages.append(f"LÃ­nea invÃ¡lida: {line}")
                 continue
 
             with self.lock:
                 self.samples.append(sample)
                 self.all_samples.append(sample)
+

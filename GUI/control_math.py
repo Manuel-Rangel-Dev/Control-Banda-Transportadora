@@ -31,9 +31,12 @@ def closed_loop_response(
         return np.array([]), np.array([])
 
     t = np.asarray(t_data, dtype=float)
+    t = t[np.isfinite(t)]
     t = t[t >= 0.0]
     if len(t) < 2:
         t = np.linspace(0.0, max(1.0, float(t[-1]) if len(t) else 1.0), 2)
+    if not np.allclose(np.diff(t), np.diff(t)[0], rtol=1e-3, atol=1e-6):
+        t = np.linspace(float(t[0]), float(t[-1]), len(t))
 
     plant = build_plant(modelo)
     controller = build_controller(tipo, kp, ki, kd)

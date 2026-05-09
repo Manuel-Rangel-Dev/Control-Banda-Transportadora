@@ -1,15 +1,15 @@
 # Control de Velocidad - Motor DC + Banda Transportadora
 
-Proyecto integrador para analizar, simular y controlar la velocidad de una banda transportadora accionada por un motor DC con encoder Hall. El sistema combina una interfaz gráfica en Streamlit, un firmware para Arduino desarrollado con PlatformIO y herramientas de adquisición de datos en tiempo real.
+Proyecto integrador para analizar, simular y controlar la velocidad de una banda transportadora accionada por un motor DC con encoder Hall. El sistema combina una interfaz grafica de escritorio en Python, un firmware para Arduino desarrollado con PlatformIO y herramientas de adquisicion de datos en tiempo real.
 
-## Descripción
+## Descripcion
 
-La aplicación permite trabajar en dos niveles:
+La aplicacion permite trabajar en dos niveles:
 
-- **Modelado matemático:** Análisis del sistema en lazo cerrado, selección de planta, controladores P/PI/PD/PID, respuesta temporal, lugar de raíces, polos y ceros, diagramas de Bode y diagnóstico de estabilidad.
-- **Conexión Arduino:** Comunicación serial con la placa, visualización de la velocidad real en RPM, comparación contra el modelo matemático, gráfica del error, cambio de setpoint y ajuste de controlador/ganancias sin detener el programa.
+- **Modelado matematico:** analisis de la respuesta temporal en lazo cerrado para la planta, controlador y ganancias seleccionadas.
+- **Conexion Arduino:** comunicacion serial con la placa, visualizacion de la velocidad real en RPM, comparacion contra el modelo matematico, grafica del error, cambio de setpoint y ajuste de controlador/ganancias sin detener el programa ni recargar la interfaz.
 
-La variable controlada es la velocidad de la banda en **RPM**, medida mediante encoder Hall. El actuador se controla con PWM a través de un puente H L298N.
+La variable controlada es la velocidad de la banda en **RPM**, medida mediante encoder Hall. El actuador se controla con PWM a traves de un puente H L298N.
 
 ## Estructura Del Proyecto
 
@@ -20,51 +20,51 @@ Proyecto_Integrador/
 |   +-- src/
 |       +-- main.cpp              # Firmware Arduino/PlatformIO
 +-- GUI/
-|   +-- GUI.py                    # Aplicación principal Streamlit
-|   +-- hardware_tab.py           # Pestaña de conexión Arduino
-|   +-- serial_banda.py           # Comunicación serial y registro CSV
-|   +-- control_math.py           # Modelo matemático usado por la pestaña hardware
+|   +-- GUI.py                    # Aplicacion principal Tkinter + Matplotlib
+|   +-- serial_banda.py           # Comunicacion serial y registro CSV
+|   +-- control_math.py           # Modelo matematico usado por la interfaz
 |   +-- requirements.txt
 +-- Docs/
 +-- LICENSE
 +-- README.md
 ```
 
-## Interfaz Gráfica
+La primera version de la interfaz hecha con Streamlit se conserva fuera del proyecto principal en:
 
-La interfaz se ejecuta con Streamlit y está organizada en dos pestañas.
+```text
+C:\Users\Manuel\Desktop\Universidad\Control Automático\VScode\GUI_Intento1
+```
 
-### Modelado Matemático
+## Interfaz Grafica
+
+La interfaz se ejecuta como aplicacion de escritorio con Tkinter y Matplotlib. Esta organizada en dos pestanas.
+
+### Modelado Matematico
 
 Incluye:
 
-- Setpoint de referencia en RPM.
-- Selección de modelo de planta: primer orden o segundo orden.
+- Setpoint de referencia entre 35 RPM y 80 RPM.
+- Seleccion de modelo de planta: primer orden o segundo orden.
 - Controladores P, PI, PD y PID con ganancias configurables.
-- Diagrama de bloques con retroalimentación unitaria.
 - Respuesta temporal en lazo cerrado escalada a RPM.
-- Especificaciones temporales: sobreimpulso, tiempo pico, tiempo de subida, tiempo de establecimiento y error estacionario.
-- Lugar de raíces y regiones de estabilidad.
-- Mapa de polos y ceros.
-- Diagramas de Bode y margenes de estabilidad.
-- Diagnóstico de estabilidad segun la ubicacion de los polos.
 
-### Conexión Arduino
+### Conexion Arduino
 
 Incluye:
 
-- Detección y selección del puerto serial.
-- Botones para conectar, desconectar, iniciar, detener, limpiar datos y guardar CSV.
-- Setpoint en RPM configurable en tiempo real.
-- Selección de controlador P, PI, PD o PID.
+- Deteccion y seleccion del puerto serial.
+- Botones para conectar, desconectar, iniciar, detener y limpiar datos.
+- Setpoint en RPM configurable en tiempo real dentro del rango 35-80 RPM.
+- Seleccion de controlador P, PI, PD o PID.
 - Ajuste de ganancias `Kp`, `Ki` y `Kd` sin recompilar el firmware.
-- Gráfica superior con:
+- Actualizacion fluida mediante temporizador de interfaz, sin recargar toda la aplicacion.
+- Grafica superior con:
   - velocidad real medida,
   - setpoint,
-  - respuesta del modelo matemático.
-- Gráfica inferior del error:
+  - respuesta del modelo matematico.
+- Grafica inferior del error:
   - `error = setpoint - RPM medida`.
-- Indicadores instantáneos de RPM real, setpoint, error y PWM aplicado.
+- Indicadores instantaneos de RPM real, setpoint, error y PWM aplicado.
 
 ## Firmware PlatformIO
 
@@ -95,25 +95,25 @@ upload_speed = 115200
 | L298N IN2 | 9 |
 | L298N ENA/PWM | 10 |
 
-### Parámetros Del Encoder
+### Parametros Del Encoder
 
 ```cpp
 PPR motor = 34.02
-Relación de reducción = 12.0
-CPR = PPR motor * relación de reducción
+Relacion de reduccion = 12.0
+CPR = PPR motor * relacion de reduccion
 Periodo de muestreo = 50 ms
 ```
 
 ## Protocolo Serial
 
-La GUI envia comandos de texto terminados en salto de línea.
+La GUI envia comandos de texto terminados en salto de linea.
 
 | Comando | Funcion |
 |---|---|
 | `START` | Inicia el control y la transmision de datos |
 | `STOP` | Detiene el motor |
 | `RESET` | Reinicia conteos e integrador |
-| `SETPOINT:<rpm>` | Cambia el setpoint en RPM |
+| `SETPOINT:<rpm>` | Cambia el setpoint en RPM, limitado internamente a 35-80 RPM |
 | `CTRL:P` | Selecciona controlador proporcional |
 | `CTRL:PI` | Selecciona controlador proporcional-integral |
 | `CTRL:PD` | Selecciona controlador proporcional-derivativo |
@@ -132,21 +132,15 @@ Ejemplo:
 1.250,86.42,90.00,3.58,218,PID
 ```
 
-## Conversión Provisional RPM A PWM
+## Conversion RPM A PWM
 
-El setpoint de usuario siempre se trabaja en **RPM**. Para obtener un PWM base aproximado, el firmware usa por ahora la relación experimental:
-
-```text
-RPM = 0.3997 * PWM + 3.004
-```
-
-Despejando:
+El setpoint de usuario siempre se trabaja en **RPM**. La relacion actual se considera valida para setpoints entre **35 RPM y 80 RPM**. Para obtener un PWM base aproximado, el firmware usa la relacion experimental:
 
 ```text
-PWM = (RPM - 3.004) / 0.3997
+PWM = -0.0022*RPM^3 + 0.4098*RPM^2 - 21.181*RPM + 440.87
 ```
 
-Ese PWM base se usa como acción inicial o feed-forward. Luego el controlador P/PI/PD/PID suma una corrección según el error medido por el encoder.
+Ese PWM base se usa como accion inicial o feed-forward. Luego el controlador P/PI/PD/PID suma una correccion segun el error medido por el encoder. El setpoint se limita a `35-80 RPM` y el resultado final se limita al rango valido de Arduino: `0` a `255`.
 
 ## Modelos De Planta
 
@@ -164,20 +158,20 @@ P(s) = \frac{4.199}{6.033 \times 10^{-6}s^2 + 0.01374s + 0.2354}
 
 ## Controladores
 
-| Controlador | Función de transferencia | Parámetros |
+| Controlador | Funcion de transferencia | Parametros |
 |---|---|---|
 | P | `C(s) = Kp` | `Kp` |
 | PI | `C(s) = Kp + Ki/s` | `Kp`, `Ki` |
 | PD | `C(s) = Kp + Kd*s` | `Kp`, `Kd` |
 | PID | `C(s) = Kp + Ki/s + Kd*s` | `Kp`, `Ki`, `Kd` |
 
-## Instalación
+## Instalacion
 
 ### Requisitos
 
 - Python 3.9 o superior.
 - VSCode.
-- Extensión PlatformIO.
+- Extension PlatformIO.
 - Arduino Uno o placa compatible.
 - Driver serial correspondiente a la placa, si aplica.
 
@@ -194,27 +188,23 @@ Dependencias principales:
 
 | Libreria | Uso |
 |---|---|
-| `streamlit` | Interfaz web |
-| `numpy` | Cálculo numerico |
-| `matplotlib` | Gráficas |
-| `control` | Funciones de transferencia y análisis de control |
-| `pyserial` | Comunicación con Arduino |
+| `tkinter` | Interfaz de escritorio, incluido con Python |
+| `numpy` | Calculo numerico |
+| `matplotlib` | Graficas |
+| `control` | Funciones de transferencia y analisis de control |
+| `pyserial` | Comunicacion con Arduino |
 
-## Ejecución
+## Ejecucion
 
 ### Ejecutar La GUI
 
 Desde la carpeta `GUI`:
 
 ```powershell
-streamlit run GUI.py
+python GUI.py
 ```
 
-La aplicacion se abrira en:
-
-```text
-http://localhost:8501
-```
+La aplicacion se abrira como ventana de escritorio.
 
 ### Compilar El Firmware
 
@@ -232,41 +222,28 @@ Con la placa conectada por USB:
 pio run -t upload
 ```
 
-También se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
+Tambien se puede hacer desde VSCode usando el boton **Upload** de PlatformIO.
 
 ## Flujo De Uso Recomendado
 
 1. Conectar el Arduino por USB.
 2. Cargar el firmware desde PlatformIO.
-3. Ejecutar la GUI con Streamlit.
+3. Ejecutar la GUI de escritorio.
 4. Abrir la pestaña **Conexion Arduino**.
 5. Seleccionar el puerto serial y presionar **Conectar**.
 6. Elegir setpoint, controlador y ganancias.
-7. Presionar **START**.
+7. Presionar **Enviar parametros** para mandar la configuracion al Arduino.
+8. Presionar **START**.
 8. Observar la velocidad real, la respuesta del modelo y el error.
-9. Ajustar setpoint o ganancias en tiempo real.
+9. Ajustar setpoint o ganancias en tiempo real y volver a presionar **Enviar parametros** para aplicarlos.
 10. Presionar **STOP** antes de desconectar.
-
-## Datos Guardados
-
-La pestaña de conexión puede guardar los ensayos en CSV con columnas:
-
-```text
-tiempo_s,rpm_medida,setpoint_rpm,error_rpm,pwm,controlador
-```
-
-Los archivos se guardan en la carpeta que se seleccione, reemplazando en:
-
-```python
-DATA_DIR = r"C:\Users\Manuel\Desktop\Universidad\Control Automático\VScode\Proyecto_Integrador\datos"
-```
-
-Que se encuentra en el archivo `serial_banda.py`.
 
 ## Pendientes Y Mejoras Futuras
 
+- Identificar experimentalmente el motor actual.
+- Refinar la conversion RPM/PWM si se obtiene una curva experimental mas precisa.
 - Ajustar ganancias iniciales recomendadas para cada controlador.
-- Agregar límites de seguridad de RPM/PWM según el comportamiento de la banda.
+- Agregar limites de seguridad de RPM/PWM segun el comportamiento de la banda.
 - Documentar capturas finales de la interfaz.
 - Agregar ejemplos de ensayos CSV.
 

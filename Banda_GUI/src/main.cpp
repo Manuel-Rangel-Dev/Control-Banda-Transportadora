@@ -12,8 +12,12 @@ const float kGearRatio = 12.0f;
 const float kCountsPerRev = kPprMotor * kGearRatio;
 const uint16_t kSampleMs = 50;
 const uint16_t kCommandBufferSize = 72;
-const float kRpmPerPwm = 0.3997f;
-const float kRpmOffset = 3.004f;
+const float kPwmCubic = -0.0022f;
+const float kPwmQuadratic = 0.4098f;
+const float kPwmLinear = -21.181f;
+const float kPwmOffset = 440.87f;
+const float kMinSetpointRpm = 35.0f;
+const float kMaxSetpointRpm = 80.0f;
 
 enum class ControllerType : uint8_t {
   kP,
@@ -24,7 +28,7 @@ enum class ControllerType : uint8_t {
 
 struct ControlConfig {
   ControllerType type = ControllerType::kPID;
-  float setpoint_rpm = 90.0f;
+  float setpoint_rpm = 60.0f;
   float kp = 2.0f;
   float ki = 0.4f;
   float kd = 0.0f;
@@ -104,7 +108,11 @@ int computePwm(float rpm, float dt) {
   }
 
   const float derivative = (dt > 0.0f) ? (error - g_prev_error) / dt : 0.0f;
-  const float feed_forward = constrain((g_cfg.setpoint_rpm - kRpmOffset) / kRpmPerPwm, 0.0f, 255.0f);
+  const float sp = g_cfg.setpoint_rpm;
+  const float feed_forward = constrain(
+      kPwmCubic * sp * sp * sp + kPwmQuadratic * sp * sp + kPwmLinear * sp + kPwmOffset,
+      0.0f,
+      255.0f);
   float correction = g_cfg.kp * error;
 
   if (uses_i) correction += g_cfg.ki * g_integral;
@@ -163,7 +171,7 @@ void handleCommand(char *cmd) {
   }
 
   if (strncmp(cmd, "SETPOINT:", 9) == 0) {
-    g_cfg.setpoint_rpm = constrain(atof(cmd + 9), 0.0f, 300.0f);
+    g_cfg.setpoint_rpm = constrain(atof(cmd + 9), kMinSetpointRpm, kMaxSetpointRpm);
     printConfig();
     return;
   }
